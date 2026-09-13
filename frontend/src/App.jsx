@@ -16,8 +16,8 @@ function App() {
   // Generation states
   const [prompt, setPrompt] = useState('A highly detailed, majestic futuristic city at sunset, cyberpunk aesthetics, neon lights, hyperrealistic, 8k resolution, octane render')
   const [negativePrompt, setNegativePrompt] = useState('blurry, low quality, distorted, deformed, watermark, signature, bad anatomy')
-  const [steps, setSteps] = useState(25)
-  const [cfgScale, setCfgScale] = useState(7)
+  const [steps, setSteps] = useState(20)
+  const [cfgScale, setCfgScale] = useState(3.5)
   const [width, setWidth] = useState(1024)
   const [height, setHeight] = useState(1024)
   
@@ -86,7 +86,7 @@ function App() {
           cfg_scale: parseFloat(cfgScale),
           width: parseInt(width),
           height: parseInt(height),
-          sampler_name: "DPM++ 2M Karras",
+          sampler_name: "Euler",
           override_settings: selectedModel ? { sd_model_checkpoint: selectedModel } : {},
           override_settings_restore_afterwards: false,
           send_images: true,
@@ -205,7 +205,7 @@ function App() {
               <label>Steps: {steps}</label>
               <input 
                 type="range" 
-                min="10" 
+                min="1" 
                 max="50" 
                 value={steps} 
                 onChange={(e) => setSteps(e.target.value)} 
@@ -217,7 +217,7 @@ function App() {
               <input 
                 type="range" 
                 min="1" 
-                max="20" 
+                max="10" 
                 step="0.5"
                 value={cfgScale} 
                 onChange={(e) => setCfgScale(e.target.value)} 

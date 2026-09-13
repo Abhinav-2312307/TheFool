@@ -18,13 +18,41 @@ function App() {
   const [negativePrompt, setNegativePrompt] = useState('blurry, low quality, distorted, deformed, watermark, signature, bad anatomy')
   const [steps, setSteps] = useState(25)
   const [cfgScale, setCfgScale] = useState(7)
-  const [width, setWidth] = useState(768)
-  const [height, setHeight] = useState(512)
+  const [width, setWidth] = useState(1024)
+  const [height, setHeight] = useState(1024)
   
+  // Model states
+  const [models, setModels] = useState([])
+  const [selectedModel, setSelectedModel] = useState('')
+  const [isFetchingModels, setIsFetchingModels] = useState(false)
   // App states
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedImage, setGeneratedImage] = useState(null)
   const [error, setError] = useState(null)
+
+  const fetchModels = async () => {
+    if (!apiUrl) {
+      setError('Please enter the API URL first.')
+      return
+    }
+    setIsFetchingModels(true)
+    setError(null)
+    const baseUrl = apiUrl.replace(/\/$/, '')
+    try {
+      const response = await fetch(`${baseUrl}/sdapi/v1/sd-models`)
+      if (!response.ok) throw new Error('Failed to fetch models')
+      const data = await response.json()
+      setModels(data)
+      if (data.length > 0) {
+        setSelectedModel(data[0].title)
+      }
+    } catch (err) {
+      console.error(err)
+      setError('Could not fetch models. Make sure the API URL is correct and the backend is running.')
+    } finally {
+      setIsFetchingModels(false)
+    }
+  }
 
   const handleGenerate = async () => {
     if (!apiUrl) {
@@ -59,6 +87,8 @@ function App() {
           width: parseInt(width),
           height: parseInt(height),
           sampler_name: "DPM++ 2M Karras",
+          override_settings: selectedModel ? { sd_model_checkpoint: selectedModel } : {},
+          override_settings_restore_afterwards: false,
           send_images: true,
           save_images: false
         })
@@ -111,17 +141,41 @@ function App() {
                 <Settings size={16} />
                 Colab Backend URL
               </label>
-              <input 
-                type="text" 
-                className="form-control api-url-input" 
-                placeholder="https://xxxx.gradio.live"
-                value={apiUrl}
-                onChange={(e) => setApiUrl(e.target.value)}
-              />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <input 
+                  type="text" 
+                  className="form-control api-url-input" 
+                  placeholder="https://xxxx.gradio.live"
+                  value={apiUrl}
+                  onChange={(e) => setApiUrl(e.target.value)}
+                />
+                <button 
+                  onClick={fetchModels} 
+                  disabled={isFetchingModels || !apiUrl}
+                  style={{ padding: '0 15px', borderRadius: '8px', cursor: 'pointer', background: 'var(--primary-color)', color: 'white', border: 'none', display: 'flex', alignItems: 'center' }}
+                >
+                  {isFetchingModels ? <Loader2 size={16} className="spin" /> : 'Connect'}
+                </button>
+              </div>
               <small style={{color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '4px'}}>
-                Run your colab notebook and paste the public Gradio URL here.
+                Run your colab notebook and paste the public Gradio URL here, then click Connect.
               </small>
             </div>
+            {models.length > 0 && (
+              <div className="form-group" style={{ marginTop: '15px' }}>
+                <label>Select AI Model</label>
+                <select 
+                  className="form-control" 
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  style={{ padding: '10px', width: '100%' }}
+                >
+                  {models.map(m => (
+                    <option key={m.title} value={m.title}>{m.model_name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           <div className="form-group">
